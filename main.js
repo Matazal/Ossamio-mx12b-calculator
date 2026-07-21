@@ -3,8 +3,8 @@ const path = require('path');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 380,
-    height: 520,
+    width: 400,
+    height: 660,
     resizable: false,
     autoHideMenuBar: true,
     title: "OssamIO MX-12B Calculator",
