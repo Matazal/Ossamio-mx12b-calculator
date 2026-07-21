@@ -9,8 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "build": {
-    "appId": "com.alio.mx12b",
-    "productName": "ALIO MX-12B",
+    "appId": "com.ossamio.mx12b",
+    "productName": "OssamIO MX-12B",
     "win": {
       "target": "nsis",
       "icon": "icon.png"

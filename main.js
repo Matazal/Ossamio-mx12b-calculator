@@ -7,7 +7,7 @@ function createWindow() {
     height: 520,
     resizable: false,
     autoHideMenuBar: true,
-    title: "ALIO MX-12B Calculator",
+    title: "OssamIO MX-12B Calculator",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

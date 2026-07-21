@@ -1,6 +1,6 @@
-# ALIO MX-12B Calculator
+# OssamIO MX-12B Calculator
 
-A fully functional, desktop-executable clone of the Casio MX-12B Desktop Calculator, styled with "ALIO" branding.
+A fully functional, desktop-executable clone of the Casio MX-12B Desktop Calculator, styled with "OssamIO" branding.
 
 ## Features
 - **Visual Design**: Matte white body, angled 12-digit LCD screen, solar panel accent, and authentic key layout.
