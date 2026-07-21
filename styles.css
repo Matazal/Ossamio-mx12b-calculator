@@ -1,0 +1,220 @@
+:root {
+  --bg-color: #f0f2f5;
+  --calc-body: #ffffff;
+  --calc-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --screen-bg: #8ba28b;
+  --text-dark: #333333;
+  --btn-dark: #3a3a3a;
+  --btn-dark-hover: #4a4a4a;
+  --btn-light: #e0e4e8;
+  --btn-light-hover: #d0d4d8;
+  --btn-red: #d33f33;
+  --btn-red-hover: #e34f43;
+  --btn-text-light: #ffffff;
+  --btn-text-dark: #333333;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg-color);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.calculator-container {
+  padding: 20px;
+}
+
+.calculator-body {
+  background: var(--calc-body);
+  width: 320px;
+  border-radius: 12px;
+  box-shadow: var(--calc-shadow), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+  padding: 20px 20px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Screen Area */
+.screen-area {
+  background: linear-gradient(135deg, #fdfdfd, #f4f4f4);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+  position: relative;
+  /* Simulating angle */
+  transform: perspective(600px) rotateX(5deg);
+  transform-origin: top;
+  border: 1px solid #eaeaea;
+}
+
+.brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.brand-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.brand-name {
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+  letter-spacing: 1px;
+}
+
+.model-name {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+}
+
+.digits-badge {
+  font-weight: 700;
+  font-size: 0.65rem;
+  color: #888;
+  border: 1px solid #aaa;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.display-bezel {
+  background: #333;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.solar-panel {
+  width: 50px;
+  background: #4a2828;
+  border: 1px solid #222;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  gap: 2px;
+}
+
+.solar-panel .cell {
+  flex: 1;
+  background: #2a1515;
+  border: 1px solid #111;
+}
+
+.lcd-screen {
+  flex: 1;
+  background: var(--screen-bg);
+  border-radius: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  padding: 5px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.indicators {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: rgba(0,0,0,0.8);
+  height: 12px;
+}
+
+.ind.hidden {
+  visibility: hidden;
+}
+
+.lcd-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2.2rem;
+  text-align: right;
+  color: rgba(0,0,0,0.85);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+/* Keypad */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 12px 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.1);
+  transition: all 0.05s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active, .btn.active-key {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(rgba(255,255,255,0.2), transparent);
+  border-radius: 6px 6px 0 0;
+}
+
+.btn-dark {
+  background-color: var(--btn-dark);
+  color: var(--btn-text-light);
+}
+
+.btn-dark:active, .btn-dark.active-key { background-color: var(--btn-dark-hover); }
+
+.btn-light {
+  background-color: var(--btn-light);
+  color: var(--btn-text-dark);
+}
+
+.btn-light:active, .btn-light.active-key { background-color: var(--btn-light-hover); }
+
+.btn-red {
+  background-color: var(--btn-red);
+  color: var(--btn-text-light);
+}
+
+.btn-red:active, .btn-red.active-key { background-color: var(--btn-red-hover); }
+
+.span-2 {
+  grid-column: span 2;
+}
