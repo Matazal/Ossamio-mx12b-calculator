@@ -3,76 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OssamIO MX-12B Calculator</title>
+  <title>OssamIO MX-12B Scientific</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script defer src="https://unpkg.com/mathlive"></script>
+  <script type="module">
+    import { ComputeEngine } from 'https://unpkg.com/@cortex-js/compute-engine?module';
+    window.ce = new ComputeEngine();
+  </script>
 </head>
 <body>
   <div class="calculator-container">
     <div class="calculator-body">
-      <!-- Screen Area (Angled) -->
+      <!-- Screen Area -->
       <div class="screen-area">
         <div class="brand-row">
           <div class="brand-left">
             <span class="brand-name">OssamIO</span>
-            <span class="model-name">MX-12B</span>
+            <span class="model-name">fx-500ES</span>
           </div>
           <div class="brand-right">
-            <span class="digits-badge">12 DIGITS</span>
+            <span class="digits-badge">NATURAL DISPLAY</span>
           </div>
         </div>
         
         <div class="display-bezel">
-          <div class="solar-panel">
-            <div class="cell"></div>
-            <div class="cell"></div>
-            <div class="cell"></div>
-            <div class="cell"></div>
-          </div>
           <div class="lcd-screen">
             <div class="indicators">
+              <span id="ind-shift" class="ind hidden">S</span>
+              <span id="ind-alpha" class="ind hidden">A</span>
               <span id="ind-m" class="ind hidden">M</span>
               <span id="ind-e" class="ind hidden">E</span>
             </div>
-            <div class="lcd-value" id="display">0</div>
+            <!-- MathLive Field -->
+            <math-field id="display" virtual-keyboard-mode="off"></math-field>
+            <math-field id="answer-display" read-only virtual-keyboard-mode="off" class="answer-display"></math-field>
           </div>
         </div>
       </div>
 
-      <!-- Keypad Area -->
-      <div class="keypad">
-        <button class="btn fn btn-red" data-key="ac">ON/AC</button>
-        <button class="btn fn btn-red" data-key="c">C</button>
-        <button class="btn fn btn-light" data-key="%">%</button>
-        <button class="btn fn btn-light" data-key="sqrt">√</button>
+      <!-- Control Area (D-Pad & Top Functions) -->
+      <div class="control-area">
+        <button class="btn fn btn-light round-btn small-text" data-key="shift">SHIFT</button>
+        <button class="btn fn btn-light round-btn small-text hidden-btn" data-key="alpha">ALPHA</button>
+        
+        <div class="d-pad">
+          <button class="btn d-pad-btn up" data-key="up">▲</button>
+          <button class="btn d-pad-btn left" data-key="left">◀</button>
+          <button class="btn d-pad-btn right" data-key="right">▶</button>
+          <button class="btn d-pad-btn down" data-key="down">▼</button>
+          <div class="d-pad-center"></div>
+        </div>
 
-        <button class="btn mem btn-light" data-key="mc">MC</button>
-        <button class="btn mem btn-light" data-key="mr">MR</button>
-        <button class="btn mem btn-light" data-key="m-">M-</button>
-        <button class="btn mem btn-light" data-key="m+">M+</button>
+        <button class="btn fn btn-light round-btn small-text hidden-btn" data-key="mode">MODE</button>
+        <button class="btn fn btn-red round-btn small-text" data-key="ac">ON</button>
+      </div>
 
-        <button class="btn num btn-dark" data-key="7">7</button>
-        <button class="btn num btn-dark" data-key="8">8</button>
-        <button class="btn num btn-dark" data-key="9">9</button>
-        <button class="btn op btn-light" data-key="/">÷</button>
+      <!-- Scientific Keypad Area -->
+      <div class="scientific-keypad">
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="abs">Abs</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="frac">■/□</button></div>
+        <div class="key-wrapper"><div class="shift-label">³√□</div><button class="btn sci btn-light" data-key="sqrt">√□</button></div>
+        <div class="key-wrapper"><div class="shift-label">x³</div><button class="btn sci btn-light" data-key="x2">x<sup>2</sup></button></div>
+        <div class="key-wrapper"><div class="shift-label">ⁿ√□</div><button class="btn sci btn-light" data-key="power">x<sup>□</sup></button></div>
+        <div class="key-wrapper"><div class="shift-label">10<sup>□</sup></div><button class="btn sci btn-light" data-key="log">log</button></div>
 
-        <button class="btn num btn-dark" data-key="4">4</button>
-        <button class="btn num btn-dark" data-key="5">5</button>
-        <button class="btn num btn-dark" data-key="6">6</button>
-        <button class="btn op btn-light" data-key="*">×</button>
+        <div class="key-wrapper"><div class="shift-label">e<sup>□</sup></div><button class="btn sci btn-light" data-key="ln">ln</button></div>
+        <div class="key-wrapper"><div class="shift-label">sin⁻¹</div><button class="btn sci btn-light" data-key="sin">sin</button></div>
+        <div class="key-wrapper"><div class="shift-label">cos⁻¹</div><button class="btn sci btn-light" data-key="cos">cos</button></div>
+        <div class="key-wrapper"><div class="shift-label">tan⁻¹</div><button class="btn sci btn-light" data-key="tan">tan</button></div>
+        <div class="key-wrapper"><div class="shift-label">x!</div><button class="btn sci btn-light" data-key="inv">x<sup>-1</sup></button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="sd">S⇔D</button></div>
 
-        <button class="btn num btn-dark" data-key="1">1</button>
-        <button class="btn num btn-dark" data-key="2">2</button>
-        <button class="btn num btn-dark" data-key="3">3</button>
-        <button class="btn op btn-light" data-key="-">-</button>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="(">(</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key=")">)</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="mc">MC</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="mr">MR</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="m-">M-</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="m+">M+</button></div>
+      </div>
 
-        <button class="btn num btn-dark" data-key="0">0</button>
-        <button class="btn num btn-dark" data-key="00">00</button>
-        <button class="btn num btn-dark" data-key=".">.</button>
-        <button class="btn op btn-light" data-key="+">+</button>
+      <!-- Numpad Area -->
+      <div class="numpad">
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="7">7</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="8">8</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="9">9</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn fn btn-red" data-key="del">DEL</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn fn btn-red" data-key="ac">AC</button></div>
 
-        <button class="btn fn btn-light span-2" data-key="+/-">+/-</button>
-        <button class="btn op btn-light span-2" data-key="=">=</button>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="4">4</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="5">5</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="6">6</button></div>
+        <div class="key-wrapper"><div class="shift-label">nPr</div><button class="btn op btn-light" data-key="*">×</button></div>
+        <div class="key-wrapper"><div class="shift-label">nCr</div><button class="btn op btn-light" data-key="/">÷</button></div>
+
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="1">1</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="2">2</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="3">3</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn op btn-light" data-key="+">+</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn op btn-light" data-key="-">-</button></div>
+
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key="0">0</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn num btn-dark" data-key=".">.</button></div>
+        <div class="key-wrapper"><div class="shift-label">π</div><button class="btn sci btn-light" style="font-size:0.75rem;" data-key="exp">×10<sup>x</sup></button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn sci btn-light" data-key="ans">Ans</button></div>
+        <div class="key-wrapper"><div class="shift-label"></div><button class="btn op btn-light" data-key="=">=</button></div>
       </div>
     </div>
   </div>

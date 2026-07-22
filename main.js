@@ -3,11 +3,11 @@ const path = require('path');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 400,
-    height: 660,
-    resizable: false,
+    width: 480,
+    height: 780,
+    resizable: true,
     autoHideMenuBar: true,
-    title: "OssamIO MX-12B Calculator",
+    title: "OssamIO MX-12B Scientific",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

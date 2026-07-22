@@ -8,334 +8,366 @@ class AudioContextManager {
       this.audioCtx.resume();
     }
     
-    // Synthesize a mechanical switch sound
+    // Synthesize a crisp, short mechanical click (like a tactile switch)
     const osc = this.audioCtx.createOscillator();
     const gainNode = this.audioCtx.createGain();
-    const filter = this.audioCtx.createBiquadFilter();
 
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(150, this.audioCtx.currentTime); // Low fundamental freq
-    osc.frequency.exponentialRampToValueAtTime(40, this.audioCtx.currentTime + 0.05);
+    // High pitched snap that drops instantly to simulate the physical click
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, this.audioCtx.currentTime + 0.015);
 
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1000, this.audioCtx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(100, this.audioCtx.currentTime + 0.05);
+    // Sharp attack and very rapid decay
+    gainNode.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.015);
 
-    gainNode.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
-
-    osc.connect(filter);
-    filter.connect(gainNode);
+    osc.connect(gainNode);
     gainNode.connect(this.audioCtx.destination);
 
     osc.start();
-    osc.stop(this.audioCtx.currentTime + 0.05);
-
-    // Add a bit of white noise for the 'click' texture
-    const bufferSize = this.audioCtx.sampleRate * 0.05;
-    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    
-    const noiseSource = this.audioCtx.createBufferSource();
-    noiseSource.buffer = buffer;
-    
-    const noiseFilter = this.audioCtx.createBiquadFilter();
-    noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = 2000;
-    
-    const noiseGain = this.audioCtx.createGain();
-    noiseGain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.02);
-    
-    noiseSource.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(this.audioCtx.destination);
-    
-    noiseSource.start();
+    osc.stop(this.audioCtx.currentTime + 0.015);
   }
 }
 
 const audioMgr = new AudioContextManager();
 
-class Calculator {
+class ScientificCalculator {
   constructor() {
-    this.displayEl = document.getElementById('display');
+    this.mf = document.getElementById('display');
+    this.ansMf = document.getElementById('answer-display');
+    
+    // Indicators
+    this.indShift = document.getElementById('ind-shift');
+    this.indAlpha = document.getElementById('ind-alpha');
     this.indM = document.getElementById('ind-m');
     this.indE = document.getElementById('ind-e');
-    
-    this.memory = 0;
-    this.currentValue = '0';
-    this.previousValue = null;
-    this.operator = null;
-    this.newInputExpected = true;
+
+    this.shiftActive = false;
+    this.alphaActive = false;
     this.errorState = false;
     
-    this.MAX_DIGITS = 12;
+    this.ans = 0;
+    this.memory = 0;
     
-    this.bindEvents();
-    this.updateDisplay();
+    // Wait for custom elements to define (MathLive)
+    customElements.whenDefined('math-field').then(() => {
+      this.initComputeEngine();
+      this.bindEvents();
+      setTimeout(() => this.mf.focus(), 500);
+    });
+  }
+
+  initComputeEngine() {
+    // Check if ComputeEngine is available from CDN (initialized in index.html module script)
+    if (window.ce) {
+      this.ce = window.ce;
+    } else {
+      console.warn("ComputeEngine not loaded yet. Retrying...");
+      setTimeout(() => this.initComputeEngine(), 200);
+    }
   }
 
   bindEvents() {
     document.querySelectorAll('.btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      // Prevent button clicks from stealing focus from the math field
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      
+      btn.addEventListener('click', (e) => {
         audioMgr.playClick();
-        this.handleInput(btn.getAttribute('data-key'));
-      });
-    });
+        
+        this.mf.focus();
 
-    document.addEventListener('keydown', (e) => {
-      let keyMap = {
-        'Escape': 'ac', 'Delete': 'c', 'Backspace': 'c',
-        'Enter': '=', '=': '=', '+': '+', '-': '-', '*': '*', '/': '/',
-        '.': '.', '%': '%', 'm': 'm+', 'n': 'm-'
-      };
-      
-      let mappedKey = null;
-      if (e.key >= '0' && e.key <= '9') {
-        mappedKey = e.key;
-      } else if (keyMap[e.key]) {
-        mappedKey = keyMap[e.key];
-      }
-      
-      if (mappedKey) {
-        audioMgr.playClick();
-        this.handleInput(mappedKey);
+        const key = btn.getAttribute('data-key');
+        this.handleInput(key);
+        
         // Visual feedback
-        const btn = document.querySelector(`[data-key="${mappedKey}"]`);
-        if (btn) {
-          btn.classList.add('active-key');
-          setTimeout(() => btn.classList.remove('active-key'), 100);
-        }
-      }
+        btn.classList.add('active-key');
+        setTimeout(() => btn.classList.remove('active-key'), 100);
+      });
     });
   }
 
   handleInput(key) {
-    if (this.errorState && key !== 'ac' && key !== 'c') return;
-
-    if (key >= '0' && key <= '9') {
-      this.inputDigit(key);
-    } else if (key === '00') {
-      this.inputDigit('0');
-      this.inputDigit('0');
-    } else if (key === '.') {
-      this.inputDecimal();
-    } else if (key === 'ac') {
-      this.clearAll();
-    } else if (key === 'c') {
-      this.clearEntry();
-    } else if (key === '+/-') {
-      this.toggleSign();
-    } else if (['+', '-', '*', '/'].includes(key)) {
-      this.handleOperator(key);
-    } else if (key === '=') {
-      this.calculate();
-    } else if (key === 'sqrt') {
-      this.calculateSqrt();
-    } else if (key === '%') {
-      this.calculatePercentage();
-    } else if (['mc', 'mr', 'm+', 'm-'].includes(key)) {
-      this.handleMemory(key);
+    if (this.errorState && key !== 'ac') {
+      return; // Ignore inputs until AC is pressed
     }
 
-    this.updateDisplay();
-  }
-
-  inputDigit(digit) {
-    if (this.newInputExpected) {
-      this.currentValue = digit;
-      this.newInputExpected = false;
-    } else {
-      // Remove minus sign for length check
-      const pureDigits = this.currentValue.replace(/[-.]/g, '');
-      if (pureDigits.length < this.MAX_DIGITS) {
-        this.currentValue = this.currentValue === '0' ? digit : this.currentValue + digit;
-      }
-    }
-  }
-
-  inputDecimal() {
-    if (this.newInputExpected) {
-      this.currentValue = '0.';
-      this.newInputExpected = false;
-    } else if (!this.currentValue.includes('.')) {
-      this.currentValue += '.';
-    }
-  }
-
-  clearAll() {
-    this.currentValue = '0';
-    this.previousValue = null;
-    this.operator = null;
-    this.newInputExpected = true;
-    this.errorState = false;
-    this.indE.classList.add('hidden');
-  }
-
-  clearEntry() {
-    this.currentValue = '0';
-    this.newInputExpected = true;
-    this.errorState = false;
-    this.indE.classList.add('hidden');
-  }
-
-  toggleSign() {
-    if (this.currentValue !== '0') {
-      this.currentValue = (parseFloat(this.currentValue) * -1).toString();
-    }
-  }
-
-  handleOperator(op) {
-    if (this.operator && !this.newInputExpected) {
-      this.calculate();
-    }
-    this.previousValue = this.currentValue;
-    this.operator = op;
-    this.newInputExpected = true;
-  }
-
-  calculate() {
-    if (!this.operator || !this.previousValue) return;
-
-    const prev = parseFloat(this.previousValue);
-    const curr = parseFloat(this.currentValue);
-    let result = 0;
-
-    switch (this.operator) {
-      case '+': result = prev + curr; break;
-      case '-': result = prev - curr; break;
-      case '*': result = prev * curr; break;
-      case '/': 
-        if (curr === 0) {
-          this.triggerError();
-          return;
+    switch(key) {
+      // Navigation
+      case 'up': this.mf.executeCommand('moveToPreviousLine'); break;
+      case 'down': this.mf.executeCommand('moveToNextLine'); break;
+      case 'left': this.mf.executeCommand('moveToPreviousChar'); break;
+      case 'right': this.mf.executeCommand('moveToNextChar'); break;
+      
+      // Controls
+      case 'ac':
+        if (this.shiftActive && typeof window.close === 'function') {
+           window.close();
+        } else {
+           this.mf.setValue('');
+           this.ansMf.setValue('');
+           this.clearError();
+           this.shiftActive = false;
+           this.alphaActive = false;
+           this.updateIndicators();
         }
-        result = prev / curr; 
         break;
-    }
-
-    this.formatAndSetResult(result);
-    this.operator = null;
-    this.previousValue = null;
-    this.newInputExpected = true;
-  }
-
-  calculateSqrt() {
-    const curr = parseFloat(this.currentValue);
-    if (curr < 0) {
-      this.triggerError();
-      return;
-    }
-    this.formatAndSetResult(Math.sqrt(curr));
-    this.newInputExpected = true;
-  }
-
-  calculatePercentage() {
-    if (!this.operator || !this.previousValue) return;
-    
-    const A = parseFloat(this.previousValue);
-    const B = parseFloat(this.currentValue);
-    let result = 0;
-
-    switch (this.operator) {
-      case '+': 
-        // Addition mark-up: A + (A * B / 100)
-        result = A + (A * B / 100); 
+      case 'del':
+        this.mf.executeCommand('deleteBackward');
         break;
-      case '-': 
-        // Discount: A - (A * B / 100)
-        result = A - (A * B / 100); 
+      case 'shift':
+        this.shiftActive = !this.shiftActive;
+        this.updateIndicators();
         break;
-      case '*': 
-        // Standard multiplication: (A * B) / 100
-        result = (A * B) / 100; 
+      case 'alpha':
+        this.alphaActive = !this.alphaActive;
+        this.updateIndicators();
+        break;
+      
+      // Numbers & Basic Operators
+      case '0': case '1': case '2': case '3': case '4': 
+      case '5': case '6': case '7': case '8': case '9':
+      case '.':
+      case '+':
+      case '-':
+        this.mf.executeCommand(['insert', key]);
+        break;
+        
+      case '*':
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', 'P\\left(#?, #?\\right)']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\times']); 
+        }
         break;
       case '/': 
-        // Division percentage: A / (B / 100)
-        result = A / (B / 100); 
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', 'C\\left(#?, #?\\right)']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\div']); 
+        }
         break;
-    }
-    
-    this.formatAndSetResult(result);
-    this.operator = null;
-    this.previousValue = null;
-    this.newInputExpected = true;
-  }
-
-  handleMemory(key) {
-    const curr = parseFloat(this.currentValue);
-    switch (key) {
+        
+      case 'exp':
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', '\\pi']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\times10^{#?}']);
+        }
+        break;
+      case 'ans':
+        this.mf.executeCommand(['insert', 'Ans']);
+        break;
+        
+      // Scientific functions
+      case 'abs': this.mf.executeCommand(['insert', '|#?|']); break;
+      case 'frac': this.mf.executeCommand(['insert', '\\frac{#?}{#?}']); break;
+      case 'sqrt': 
+        if (this.shiftActive) {
+           this.mf.executeCommand(['insert', '\\sqrt[3]{#?}']); 
+           this.toggleShift(false);
+        } else {
+           this.mf.executeCommand(['insert', '\\sqrt{#?}']); 
+        }
+        break;
+      case 'x2': 
+        if (this.shiftActive) {
+           this.mf.executeCommand(['insert', '^3']); 
+           this.toggleShift(false);
+        } else {
+           this.mf.executeCommand(['insert', '^2']); 
+        }
+        break;
+      case 'power': 
+        if (this.shiftActive) {
+           this.mf.executeCommand(['insert', '\\sqrt[#?]{#?}']); 
+           this.toggleShift(false);
+        } else {
+           this.mf.executeCommand(['insert', '^{#?}']); 
+        }
+        break;
+      case 'log': 
+        if (this.shiftActive) {
+           this.mf.executeCommand(['insert', '10^{#?}']); 
+           this.toggleShift(false);
+        } else {
+           this.mf.executeCommand(['insert', '\\log_{10}\\left(#?\\right)']); 
+        }
+        break;
+      case 'ln': 
+        if (this.shiftActive) {
+           this.mf.executeCommand(['insert', 'e^{#?}']); 
+           this.toggleShift(false);
+        } else {
+           this.mf.executeCommand(['insert', '\\ln\\left(#?\\right)']); 
+        }
+        break;
+      
+      case 'sin': 
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', '\\arcsin\\left(#?\\right)']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\sin\\left(#?\\right)']); 
+        }
+        break;
+      case 'cos': 
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', '\\arccos\\left(#?\\right)']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\cos\\left(#?\\right)']); 
+        }
+        break;
+      case 'tan': 
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', '\\arctan\\left(#?\\right)']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '\\tan\\left(#?\\right)']); 
+        }
+        break;
+      case 'inv': 
+        if (this.shiftActive) {
+          this.mf.executeCommand(['insert', '!']);
+          this.toggleShift(false);
+        } else {
+          this.mf.executeCommand(['insert', '^{-1}']); 
+        }
+        break;
+      
+      case 'sd':
+        // Custom feature: force decimal evaluation
+        this.evaluateExpression(true);
+        break;
+        
+      case '(': this.mf.executeCommand(['insert', '(']); break;
+      case ')': this.mf.executeCommand(['insert', ')']); break;
+      
+      case 'm+':
+      case 'm-':
+        this.handleMemory(key);
+        break;
       case 'mc':
         this.memory = 0;
         this.indM.classList.add('hidden');
         break;
       case 'mr':
-        this.currentValue = this.memory.toString();
-        this.newInputExpected = true;
+        this.mf.executeCommand(['insert', this.memory.toString()]);
         break;
-      case 'm+':
-        this.memory += curr;
-        this.indM.classList.remove('hidden');
-        this.newInputExpected = true;
-        break;
-      case 'm-':
-        this.memory -= curr;
-        this.indM.classList.remove('hidden');
-        this.newInputExpected = true;
+        
+      case '=':
+        this.evaluateExpression(false);
         break;
     }
   }
 
-  formatAndSetResult(num) {
-    let resultStr = num.toString();
+  toggleShift(state) {
+    this.shiftActive = state;
+    this.updateIndicators();
+  }
+  
+  updateIndicators() {
+    this.indShift.classList.toggle('hidden', !this.shiftActive);
+    this.indAlpha.classList.toggle('hidden', !this.alphaActive);
+  }
+
+  preprocessLatex(latex) {
+    if (!latex) return '';
+    // Substitute Ans keyword
+    latex = latex.replace(/Ans/g, this.ans.toString());
     
-    // Check overflow
-    const pureDigits = resultStr.replace(/[-.]/g, '').split('e')[0];
-    if (pureDigits.length > this.MAX_DIGITS || Math.abs(num) > Math.pow(10, this.MAX_DIGITS) - 1) {
-      // Very large numbers
-      if (Math.abs(num) > Math.pow(10, this.MAX_DIGITS) - 1) {
-        this.triggerError();
-        return;
-      }
+    // Simplify LaTeX brackets to make regex matching easier
+    latex = latex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')');
+    
+    // Strip any MathLive formatting tags around P and C just in case
+    latex = latex.replace(/\\(?:operatorname|mathrm|text|mathit)\s*\{\s*([PC])\s*\}/g, '$1');
+    
+    // Match P(n, k) or C(n, k) robustly
+    latex = latex.replace(/P\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g, '\\frac{$1!}{($1-$2)!}');
+    latex = latex.replace(/C\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g, '\\binom{$1}{$2}');
+    
+    return latex;
+  }
+
+  handleMemory(op) {
+    if (!this.ce) return;
+    try {
+      let latex = this.mf.value;
+      if (!latex) return;
       
-      // Need to truncate decimal places
-      const [intPart, decPart] = resultStr.split('.');
-      if (intPart.length > this.MAX_DIGITS) {
+      latex = this.preprocessLatex(latex);
+      
+      const expr = this.ce.parse(latex);
+      const numValue = Number(expr.evaluate().N().valueOf());
+      
+      if (typeof numValue === 'number' && !isNaN(numValue)) {
+        if (op === 'm+') this.memory += numValue;
+        if (op === 'm-') this.memory -= numValue;
+        this.indM.classList.remove('hidden');
+      } else {
         this.triggerError();
-        return;
       }
-      if (decPart) {
-        const allowedDecimals = this.MAX_DIGITS - intPart.replace(/-/g, '').length;
-        resultStr = num.toFixed(allowedDecimals);
-        // Trim trailing zeros
-        resultStr = parseFloat(resultStr).toString();
-      }
+    } catch (e) {
+      this.triggerError();
     }
+  }
+
+  evaluateExpression(forceDecimal = false) {
+    if (!this.ce) return;
     
-    this.currentValue = resultStr;
+    try {
+      let latex = this.mf.value;
+      if (!latex) return;
+      
+      latex = this.preprocessLatex(latex);
+
+      // Parse the expression with Compute Engine
+      const expr = this.ce.parse(latex);
+      const evaluated = expr.evaluate();
+      
+      // Force numeric approximation to extract standard JS number
+      const numValue = Number(evaluated.N().valueOf());
+      
+      if (typeof numValue === 'number' && !isNaN(numValue)) {
+         this.ans = numValue;
+         
+         if (forceDecimal) {
+             let rounded = Math.round(numValue * 1e10) / 1e10;
+             this.ansMf.setValue(rounded.toString());
+         } else {
+             // If exact form is available, use it, else round decimal
+             if (evaluated.latex && !evaluated.latex.includes('Error')) {
+                 this.ansMf.setValue(evaluated.latex);
+             } else {
+                 let rounded = Math.round(numValue * 1e10) / 1e10;
+                 this.ansMf.setValue(rounded.toString());
+             }
+         }
+         this.clearError();
+      } else {
+         this.triggerError();
+      }
+    } catch (err) {
+      console.error(err);
+      this.triggerError();
+    }
   }
 
   triggerError() {
     this.errorState = true;
     this.indE.classList.remove('hidden');
-    this.currentValue = '0';
   }
 
-  updateDisplay() {
-    let displayStr = this.currentValue;
-    
-    // Add thousands separators for readability, avoiding decimals
-    const parts = displayStr.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    
-    this.displayEl.textContent = parts.join('.');
+  clearError() {
+    this.errorState = false;
+    this.indE.classList.add('hidden');
   }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new Calculator();
+  new ScientificCalculator();
 });
