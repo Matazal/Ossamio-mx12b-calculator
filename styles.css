@@ -269,8 +269,7 @@ math-field::part(virtual-keyboard-toggle) {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
-  margin-top: 15px;
-  margin-bottom: 20px;
+  margin-top: 5px;
 }
 
 .scientific-keypad .btn {
@@ -282,7 +281,6 @@ math-field::part(virtual-keyboard-toggle) {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  margin-top: 15px;
 }
 
 .key-wrapper {
