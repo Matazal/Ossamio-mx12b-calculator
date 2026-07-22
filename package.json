@@ -12,7 +12,7 @@
     "appId": "com.ossamio.mx12b",
     "productName": "OssamIO MX-12B",
     "win": {
-      "target": "nsis",
+      "target": "portable",
       "icon": "icon.png"
     }
   },
