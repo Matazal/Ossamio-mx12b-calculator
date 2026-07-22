@@ -7,6 +7,7 @@ A fully functional, desktop-executable clone of the Casio fx-500ES, styled with 
 ### Control & Navigation
 - **D-Pad (▲ ▼ ◀ ▶)**: Navigate into and out of nested mathematical structures (like superscripts, subscripts, fractions, and root indices). Use this to move the cursor to precisely where you want to type.
 - **SHIFT**: Toggles the secondary function mode. When pressed, an `S` indicator appears. The very next key pressed will execute its orange secondary function (indicated above the key).
+- **DEG/RAD**: Toggles the calculator's trigonometric angle mode between Degrees and Radians. The screen displays a `D` or `R` indicator depending on the active mode.
 - **ON / AC**: Clears the entire current equation and the answer screen.
 - **DEL**: Deletes the character immediately to the left of the cursor.
 

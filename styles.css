@@ -202,12 +202,20 @@ math-field::part(virtual-keyboard-toggle) {
 
 .round-btn {
   border-radius: 12px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
+  padding: 4px 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
   height: 28px;
   display: flex;
   justify-content: center;
   align-items: center;
+  white-space: nowrap;
+}
+
+.mode-btn {
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 4px 6px;
 }
 
 .small-text {
@@ -216,8 +224,8 @@ math-field::part(virtual-keyboard-toggle) {
 }
 
 .hidden-btn {
-  visibility: hidden;
-  pointer-events: none;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .d-pad {

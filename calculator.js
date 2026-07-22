@@ -41,10 +41,13 @@ class ScientificCalculator {
     this.indAlpha = document.getElementById('ind-alpha');
     this.indM = document.getElementById('ind-m');
     this.indE = document.getElementById('ind-e');
+    this.indDeg = document.getElementById('ind-deg');
+    this.indRad = document.getElementById('ind-rad');
 
     this.shiftActive = false;
     this.alphaActive = false;
     this.errorState = false;
+    this.angleMode = 'DEG';
     
     this.ans = 0;
     this.memory = 0;
@@ -101,16 +104,12 @@ class ScientificCalculator {
       
       // Controls
       case 'ac':
-        if (this.shiftActive && typeof window.close === 'function') {
-           window.close();
-        } else {
-           this.mf.setValue('');
-           this.ansMf.setValue('');
-           this.clearError();
-           this.shiftActive = false;
-           this.alphaActive = false;
-           this.updateIndicators();
-        }
+        this.mf.setValue('');
+        this.ansMf.setValue('');
+        this.clearError();
+        this.shiftActive = false;
+        this.alphaActive = false;
+        this.updateIndicators();
         break;
       case 'del':
         this.mf.executeCommand('deleteBackward');
@@ -122,6 +121,12 @@ class ScientificCalculator {
       case 'alpha':
         this.alphaActive = !this.alphaActive;
         this.updateIndicators();
+        break;
+      
+      case 'mode':
+        this.angleMode = this.angleMode === 'DEG' ? 'RAD' : 'DEG';
+        this.indDeg.classList.toggle('hidden', this.angleMode !== 'DEG');
+        this.indRad.classList.toggle('hidden', this.angleMode !== 'RAD');
         break;
       
       // Numbers & Basic Operators
@@ -277,8 +282,8 @@ class ScientificCalculator {
 
   preprocessLatex(latex) {
     if (!latex) return '';
-    // Substitute Ans keyword
-    latex = latex.replace(/Ans/g, this.ans.toString());
+    // Substitute Ans keyword with parentheses to ensure correct precedence (e.g. for negative values)
+    latex = latex.replace(/Ans/g, `(${this.ans})`);
     
     // Simplify LaTeX brackets to make regex matching easier
     latex = latex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')');
@@ -290,6 +295,12 @@ class ScientificCalculator {
     latex = latex.replace(/P\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g, '\\frac{$1!}{($1-$2)!}');
     latex = latex.replace(/C\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g, '\\binom{$1}{$2}');
     
+    // Angle mode conversions
+    if (this.angleMode === 'DEG') {
+      latex = latex.replace(/\\(sin|cos|tan)\s*\\left\(/g, '\\$1\\left(\\frac{\\pi}{180}\\times(');
+      latex = latex.replace(/\\(arcsin|arccos|arctan)\s*\\left\(/g, '\\frac{180}{\\pi}\\times\\$1\\left(');
+    }
+    
     return latex;
   }
 
@@ -297,14 +308,17 @@ class ScientificCalculator {
     if (!this.ce) return;
     try {
       let latex = this.mf.value;
-      if (!latex) return;
+      if (!latex || latex.includes('\\blacksquare') || latex.includes('#?')) {
+        this.triggerError();
+        return;
+      }
       
       latex = this.preprocessLatex(latex);
       
       const expr = this.ce.parse(latex);
       const numValue = Number(expr.evaluate().N().valueOf());
       
-      if (typeof numValue === 'number' && !isNaN(numValue)) {
+      if (typeof numValue === 'number' && !isNaN(numValue) && isFinite(numValue)) {
         if (op === 'm+') this.memory += numValue;
         if (op === 'm-') this.memory -= numValue;
         this.indM.classList.remove('hidden');
@@ -323,6 +337,11 @@ class ScientificCalculator {
       let latex = this.mf.value;
       if (!latex) return;
       
+      if (latex.includes('\\blacksquare') || latex.includes('#?')) {
+        this.triggerError();
+        return;
+      }
+      
       latex = this.preprocessLatex(latex);
 
       // Parse the expression with Compute Engine
@@ -332,7 +351,7 @@ class ScientificCalculator {
       // Force numeric approximation to extract standard JS number
       const numValue = Number(evaluated.N().valueOf());
       
-      if (typeof numValue === 'number' && !isNaN(numValue)) {
+      if (typeof numValue === 'number' && !isNaN(numValue) && isFinite(numValue)) {
          this.ans = numValue;
          
          if (forceDecimal) {
