@@ -11,6 +11,30 @@
     import { ComputeEngine } from 'https://unpkg.com/@cortex-js/compute-engine?module';
     window.ce = new ComputeEngine();
   </script>
+  <script>
+    function fitToScreen() {
+      const calcBody = document.querySelector('.calculator-body');
+      if (!calcBody) return;
+      
+      // The natural dimensions of the calculator plus a little margin
+      const targetWidth = 400 + 20; 
+      const targetHeight = 680 + 20;
+      
+      const scaleX = window.innerWidth / targetWidth;
+      const scaleY = window.innerHeight / targetHeight;
+      
+      // Scale down to fit, but don't scale up past 1x on large desktop monitors
+      const scale = Math.min(1, scaleX, scaleY);
+      
+      calcBody.style.transform = `scale(${scale})`;
+      calcBody.style.transformOrigin = 'center center';
+    }
+
+    window.addEventListener('resize', fitToScreen);
+    window.addEventListener('DOMContentLoaded', fitToScreen);
+    // Extra call after MathLive loads fonts/layouts
+    setTimeout(fitToScreen, 500);
+  </script>
 </head>
 <body>
   <div class="calculator-container">
